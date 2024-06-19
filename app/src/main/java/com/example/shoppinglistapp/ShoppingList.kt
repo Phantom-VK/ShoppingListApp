@@ -35,8 +35,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 
+// Data class representing a shopping item
 data class ShoppingItem(val id: Int, var name: String, var quantity: Int, var isEditing: Boolean = false)
 
+// Composable function to edit a shopping item
 @Composable
 fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit) {
     var editedName by remember { mutableStateOf(item.name) }
@@ -53,6 +55,7 @@ fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
+                // Text field to edit item name
                 BasicTextField(
                     value = editedName,
                     onValueChange = { editedName = it },
@@ -60,6 +63,7 @@ fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit
                     modifier = Modifier.padding(7.dp).wrapContentWidth().padding(start = 20.dp),
                     textStyle = TextStyle(color = Color.White)
                 )
+                // Text field to edit item quantity
                 BasicTextField(
                     value = editedQuantity,
                     onValueChange = { editedQuantity = it },
@@ -68,6 +72,7 @@ fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit
                     textStyle = TextStyle(color = Color.White)
                 )
             }
+            // Button to save the edited item
             Button(
                 onClick = {
                     onEditComplete(editedName, editedQuantity.toInt())
@@ -80,6 +85,7 @@ fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit
     }
 }
 
+// Main composable function for the shopping list app
 @Composable
 fun ShoppingListApp() {
     var sItems by remember { mutableStateOf(listOf<ShoppingItem>()) }
@@ -91,15 +97,19 @@ fun ShoppingListApp() {
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center
     ) {
+        // Button to show the dialog for adding a new item
         Button(onClick = { showDialog = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
             Text(text = "Add Item")
         }
+        // LazyColumn to display the list of shopping items
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(16.dp)
         ) {
             items(sItems) { item ->
                 if (item.isEditing) {
+                    // Show editor for the item being edited
                     ShoppingItemEditor(item = item, onEditComplete = { editedName, editedQuantity ->
+                        // Update the list with edited item and close editor
                         sItems = sItems.map { it.copy(isEditing = false) }
                         val editedItemIndex = sItems.indexOfFirst { it.id == item.id }
                         if (editedItemIndex != -1) {
@@ -113,9 +123,12 @@ fun ShoppingListApp() {
                         }
                     })
                 } else {
+                    // Show item in the list
                     ShoppingListItem(item = item, onEditClick = {
+                        // Set the item to editing mode
                         sItems = sItems.map { it.copy(isEditing = it.id == item.id) }
                     }, onDeleteClick = {
+                        // Remove the item from the list
                         sItems = sItems.filter { it.id != item.id }
                     })
                 }
@@ -123,6 +136,7 @@ fun ShoppingListApp() {
         }
     }
 
+    // Dialog to add a new item
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -131,9 +145,11 @@ fun ShoppingListApp() {
                     modifier = Modifier.fillMaxWidth().padding(7.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    // Cancel button
                     Button(onClick = { showDialog = false }) {
                         Text(text = "Cancel")
                     }
+                    // Add button
                     Button(onClick = {
                         if (itemName.isNotBlank() && itemQuantity.isNotBlank()) {
                             val newItem = ShoppingItem(
@@ -155,6 +171,7 @@ fun ShoppingListApp() {
             title = { Text(text = "Add Shopping Item", color = Color.Yellow) },
             text = {
                 Column {
+                    // Input field for item name
                     OutlinedTextField(
                         value = itemName,
                         onValueChange = { itemName = it },
@@ -162,6 +179,7 @@ fun ShoppingListApp() {
                         modifier = Modifier.fillMaxWidth().padding(7.dp)
                     )
                     Spacer(modifier = Modifier.padding(16.dp))
+                    // Input field for item quantity
                     OutlinedTextField(
                         value = itemQuantity,
                         onValueChange = { itemQuantity = it },
@@ -174,6 +192,7 @@ fun ShoppingListApp() {
     }
 }
 
+// Composable function to display a shopping item
 @Composable
 fun ShoppingListItem(item: ShoppingItem, onEditClick: () -> Unit, onDeleteClick: () -> Unit) {
     Card(
@@ -187,7 +206,9 @@ fun ShoppingListItem(item: ShoppingItem, onEditClick: () -> Unit, onDeleteClick:
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
+                // Display item name
                 Text(text = item.name, modifier = Modifier.padding(10.dp), color = Color.White)
+                // Display item quantity
                 Text(
                     text = "Qty: ${item.quantity}",
                     modifier = Modifier.padding(10.dp),
@@ -195,9 +216,11 @@ fun ShoppingListItem(item: ShoppingItem, onEditClick: () -> Unit, onDeleteClick:
                 )
             }
             Row {
+                // Button to edit the item
                 IconButton(onClick = onEditClick) {
                     Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit item ${item.name}")
                 }
+                // Button to delete the item
                 IconButton(onClick = onDeleteClick) {
                     Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete item ${item.name}")
                 }
