@@ -38,178 +38,154 @@ import androidx.compose.ui.unit.dp
 data class ShoppingItem(val id: Int, var name: String, var quantity: Int, var isEditing: Boolean = false)
 
 @Composable
-fun ShoppingItemEditor(item: ShoppingItem, onEditComplete:(String, Int) -> Unit){
+fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit) {
     var editedName by remember { mutableStateOf(item.name) }
     var editedQuantity by remember { mutableStateOf(item.quantity.toString()) }
-    var isEditing by  remember{ mutableStateOf(item.isEditing) }
 
-    Card(modifier = Modifier
-        .fillMaxWidth()
-        ,
-        shape = RoundedCornerShape(20)
-        ,
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 6.dp
-        ),
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        Row (modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth()){
+        Row(
+            modifier = Modifier.padding(8.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Column {
-                BasicTextField(value = editedName, onValueChange = {
-                    editedName = it
-                },
+                BasicTextField(
+                    value = editedName,
+                    onValueChange = { editedName = it },
                     singleLine = true,
-                    modifier = Modifier.padding(7.dp)
-                        .wrapContentWidth()
-                        .padding(start = 20.dp),
-
-                    textStyle = TextStyle(
-                        color = Color.White
-
-                    ))
-
-            BasicTextField(value = editedQuantity,
-                onValueChange = {editedQuantity = it},
-                singleLine = true,
-                modifier = Modifier.padding(7.dp)
-                    .wrapContentWidth()
-                    .padding(start = 20.dp),
-                textStyle = TextStyle(
-                    color = Color.White
-
+                    modifier = Modifier.padding(7.dp).wrapContentWidth().padding(start = 20.dp),
+                    textStyle = TextStyle(color = Color.White)
                 )
-                    )
+                BasicTextField(
+                    value = editedQuantity,
+                    onValueChange = { editedQuantity = it },
+                    singleLine = true,
+                    modifier = Modifier.padding(7.dp).wrapContentWidth().padding(start = 20.dp),
+                    textStyle = TextStyle(color = Color.White)
+                )
             }
-            Spacer(modifier = Modifier.padding(end = 100.dp))
-            Button(onClick = {
-                isEditing = false
-                onEditComplete(editedName, editedQuantity.toInt())
-            }, modifier = Modifier.padding(top = 10.dp)) {
+            Button(
+                onClick = {
+                    onEditComplete(editedName, editedQuantity.toInt())
+                },
+                modifier = Modifier.padding(top = 10.dp)
+            ) {
                 Text(text = "Save")
-
             }
-
         }
-
     }
 }
+
 @Composable
-fun ShoppingListApp(){
-    var sItems by remember{ mutableStateOf(listOf<ShoppingItem>( )) }
+fun ShoppingListApp() {
+    var sItems by remember { mutableStateOf(listOf<ShoppingItem>()) }
     var showDialog by remember { mutableStateOf(false) }
     var itemName by remember { mutableStateOf("") }
     var itemQuantity by remember { mutableStateOf("") }
 
-    Column(modifier = Modifier.fillMaxSize(),
+    Column(
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center
     ) {
         Button(onClick = { showDialog = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-
             Text(text = "Add Item")
         }
-        LazyColumn(modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)){
-            items(sItems){
-                item ->
-                if(item.isEditing){
-                    ShoppingItemEditor(item = item, onEditComplete = {
-                        editedName, editedQuantity ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(16.dp)
+        ) {
+            items(sItems) { item ->
+                if (item.isEditing) {
+                    ShoppingItemEditor(item = item, onEditComplete = { editedName, editedQuantity ->
                         sItems = sItems.map { it.copy(isEditing = false) }
-
-                        //code to find out an unknown item out of list and change its values etc.
-                        val editedItem = sItems.find { it.id == item.id }
-                        editedItem.let {
-                            if (it != null) {
-                                it.name = editedName
-                            }
-                            if (it != null) {
-                                it.quantity = editedQuantity
+                        val editedItemIndex = sItems.indexOfFirst { it.id == item.id }
+                        if (editedItemIndex != -1) {
+                            sItems = sItems.toMutableList().apply {
+                                this[editedItemIndex] = this[editedItemIndex].copy(
+                                    name = editedName,
+                                    quantity = editedQuantity,
+                                    isEditing = false
+                                )
                             }
                         }
-
                     })
-                }else {
-                ShoppingListItem(item = item, onEditClick = {
-                    //finding out which item we are editing and changing its "isEditing boolean" to true
-                    sItems = sItems.map { it.copy(isEditing = it.id == item.id) }
-                }, onDeleteClick = {
-                    sItems -= item
-                })
+                } else {
+                    ShoppingListItem(item = item, onEditClick = {
+                        sItems = sItems.map { it.copy(isEditing = it.id == item.id) }
+                    }, onDeleteClick = {
+                        sItems = sItems.filter { it.id != item.id }
+                    })
                 }
             }
         }
     }
-    if (showDialog){
-        
-        AlertDialog(onDismissRequest = { showDialog = false },
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
             confirmButton = {
-                            Row (modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(7.dp),
-                                horizontalArrangement = Arrangement.Absolute.SpaceBetween){
-
-                                Button(onClick = { showDialog = false }) {
-                                    Text(text = "Cancel")
-                                }
-                                Button(onClick = {
-                                    if(itemName.isNotBlank()){
-                                        val newItem = ShoppingItem(
-                                            id = sItems.size + 1,
-                                            quantity = itemQuantity.toInt(),
-                                            name = itemName)
-                                        sItems += newItem
-                                        showDialog = false
-                                        itemName = ""
-                                        itemQuantity = ""
-                                    }
-                                }) {
-                                    Text(text = "Add")
-                                }
-
-                            }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(7.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Button(onClick = { showDialog = false }) {
+                        Text(text = "Cancel")
+                    }
+                    Button(onClick = {
+                        if (itemName.isNotBlank() && itemQuantity.isNotBlank()) {
+                            val newItem = ShoppingItem(
+                                id = sItems.size + 1,
+                                name = itemName,
+                                quantity = itemQuantity.toInt()
+                            )
+                            sItems = sItems + newItem
+                            showDialog = false
+                            itemName = ""
+                            itemQuantity = ""
+                        }
+                    }) {
+                        Text(text = "Add")
+                    }
+                }
             },
             containerColor = AlertDialogDefaults.containerColor,
-            title = {Text(text = "Add Shopping Item", color = Color.Yellow )},
+            title = { Text(text = "Add Shopping Item", color = Color.Yellow) },
             text = {
                 Column {
-                    OutlinedTextField(value = itemName, onValueChange = {
-                        itemName = it
-                    },
+                    OutlinedTextField(
+                        value = itemName,
+                        onValueChange = { itemName = it },
                         singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(7.dp))
+                        modifier = Modifier.fillMaxWidth().padding(7.dp)
+                    )
                     Spacer(modifier = Modifier.padding(16.dp))
-                    OutlinedTextField(value = itemQuantity, onValueChange = {
-                        itemQuantity = it
-                    },
+                    OutlinedTextField(
+                        value = itemQuantity,
+                        onValueChange = { itemQuantity = it },
                         singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(7.dp))
+                        modifier = Modifier.fillMaxWidth().padding(7.dp)
+                    )
                 }
-            })
+            }
+        )
     }
 }
 
-
 @Composable
-fun ShoppingListItem(item:ShoppingItem, onEditClick:()->Unit, onDeleteClick:()->Unit){
-
-    Card(modifier = Modifier
-        .fillMaxWidth()
-        ,
-        shape = RoundedCornerShape(20)
-        ,
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 6.dp
-        ),
+fun ShoppingListItem(item: ShoppingItem, onEditClick: () -> Unit, onDeleteClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        Row (modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth()){
+        Row(
+            modifier = Modifier.padding(8.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Column {
                 Text(text = item.name, modifier = Modifier.padding(10.dp), color = Color.White)
                 Text(
@@ -218,21 +194,15 @@ fun ShoppingListItem(item:ShoppingItem, onEditClick:()->Unit, onDeleteClick:()->
                     color = Color.White
                 )
             }
-        Spacer(modifier = Modifier.padding(end = 150.dp))
-        IconButton(modifier = Modifier.padding(top = 20.dp), onClick = onEditClick) {
-            Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit item ${item.name}")
+            Row {
+                IconButton(onClick = onEditClick) {
+                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit item ${item.name}")
+                }
+                IconButton(onClick = onDeleteClick) {
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete item ${item.name}")
+                }
+            }
         }
-        IconButton(modifier = Modifier.padding(top = 20.dp), onClick = onDeleteClick) {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "Delete item ${item.name}"
-            )
-
-        }
-
-    }
-
     }
     Spacer(modifier = Modifier.padding(vertical = 8.dp))
-
 }
