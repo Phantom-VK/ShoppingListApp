@@ -1,5 +1,6 @@
 package com.example.shoppinglistapp
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,22 +21,62 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHost
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
+import androidx.navigation.compose.rememberNavController
 import com.example.shoppinglistapp.ui.theme.ShoppingListAppTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+
             ShoppingListAppTheme() {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    ShoppingListApp()
+                    Navigation()
                 }
             }
         }
     }
 }
+@Composable
+fun Navigation(){
+    val navController = rememberNavController()
+    val viewModel: LocationViewModel = viewModel()
+    val context = LocalContext.current
+    val locationUtils = LocationUtils(context)
 
+    NavHost(navController, startDestination = "shoppinglistscreen"){
+        composable("shoppinglistscreen"){
+            ShoppingListApp(
+                locationUtils = locationUtils,
+                viewModel = viewModel,
+                navController = navController,
+                context = context,
+                address = viewModel.address.value.firstOrNull()?.formattedAddress ?: "No address"
+            )
+        }
+
+        dialog("locationscreen"){
+            navBackStackEntry ->
+            viewModel.location.value?.let{it1 ->
+                LocationSelectionScreen(location = it1, onLocationSelection = {locationdata ->
+
+                    viewModel.fetchAddress("${locationdata.latitude}, ${locationdata.longitude}")
+                    navController.popBackStack()
+                })
+
+            }
+        }
+    }
+}
 

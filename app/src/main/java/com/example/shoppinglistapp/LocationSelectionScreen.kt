@@ -27,7 +27,7 @@ fun LocationSelectionScreen(
         mutableStateOf(LatLng(location.latitude, location.longitude))
     }
 
-    var cameraPositionState = rememberCameraPositionState {
+    val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(userLocation.value, 10f)
     }
 
@@ -38,7 +38,7 @@ fun LocationSelectionScreen(
         GoogleMap(modifier = Modifier
             .weight(1f)
             .padding(top = 16.dp),
-            cameraPositionState = CameraPositionState(),
+            cameraPositionState = cameraPositionState,
             onMapClick = {
                 userLocation.value = it
             }

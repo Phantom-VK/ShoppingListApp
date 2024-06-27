@@ -1,5 +1,10 @@
 package com.example.shoppinglistapp
 
+import android.Manifest
+import android.content.Context
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 
 // Data class representing a shopping item
@@ -43,6 +49,7 @@ data class ShoppingItem(
     val id: Int,
     var name: String,
     var quantity: Int,
+    var address: String,
     var isEditing: Boolean = false
 )
 
@@ -107,13 +114,14 @@ fun ShoppingListApp(
     locationUtils: LocationUtils,
     viewModel: LocationViewModel,
     navController: NavController,
-    context: CompositionContext,
+    context: Context,
     address: String
 ) {
     var sItems by remember { mutableStateOf(listOf<ShoppingItem>()) }
     var showDialog by remember { mutableStateOf(false) }
     var itemName by remember { mutableStateOf("") }
     var itemQuantity by remember { mutableStateOf("") }
+
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -144,7 +152,9 @@ fun ShoppingListApp(
                                 this[editedItemIndex] = this[editedItemIndex].copy(
                                     name = editedName,
                                     quantity = editedQuantity,
-                                    isEditing = false
+                                    isEditing = false,
+                                    address = address
+
                                 )
                             }
                         }
@@ -162,6 +172,42 @@ fun ShoppingListApp(
             }
         }
     }
+
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+        onResult = { permissions ->
+            if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+                && permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+            ) {
+                //Have location access
+                locationUtils.requestLocationUpdates(viewModel)
+            } else {
+                // ASK FOR ACCESS
+                val rationalRequired = ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as MainActivity,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) || ActivityCompat.shouldShowRequestPermissionRationale(
+                    context,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+                if (rationalRequired) {
+                    Toast.makeText(
+                        context, "Location access is required for this feature to work!",
+                        Toast.LENGTH_LONG
+                    )
+                        .show()
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Location access is required for this feature to work! Please enable it in mobile settings",
+                        Toast.LENGTH_LONG
+                    )
+                        .show()
+                }
+
+            }
+
+        })
 
     // Dialog to add a new item
     if (showDialog) {
@@ -184,7 +230,8 @@ fun ShoppingListApp(
                             val newItem = ShoppingItem(
                                 id = sItems.size + 1,
                                 name = itemName,
-                                quantity = itemQuantity.toInt()
+                                quantity = itemQuantity.toInt(),
+                                address
                             )
                             sItems = sItems + newItem
                             showDialog = false
@@ -193,6 +240,23 @@ fun ShoppingListApp(
                         }
                     }) {
                         Text(text = "Add")
+                    }
+
+                    Button(onClick = {
+                        if(locationUtils.hasLocationPermission(context)){
+                            locationUtils.requestLocationUpdates(viewModel)
+                            navController.navigate("locationscreen"){
+                                this.launchSingleTop
+                            }
+                        }else{
+                                requestPermissionLauncher.launch(arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                ))
+                        }
+                    }) {
+                        Text(text = "Address")
+
                     }
                 }
             },
@@ -253,8 +317,10 @@ fun ShoppingListItem(item: ShoppingItem, onEditClick: () -> Unit, onDeleteClick:
                     modifier = Modifier.padding(10.dp),
                     color = Color.White
                 )
+
+                Text(text = "Address: ${item.address}" )
             }
-            Row {
+            Row (horizontalArrangement = Arrangement.SpaceEvenly){
                 // Button to edit the item
                 IconButton(onClick = onEditClick) {
                     Icon(
@@ -271,7 +337,7 @@ fun ShoppingListItem(item: ShoppingItem, onEditClick: () -> Unit, onDeleteClick:
                 }
                 Icon(
                     imageVector = Icons.Default.LocationOn,
-                    contentDescription = "Add item Location"
+                    contentDescription = "Add item Location",
                 )
             }
         }
