@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Button
@@ -25,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,9 +36,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 // Data class representing a shopping item
-data class ShoppingItem(val id: Int, var name: String, var quantity: Int, var isEditing: Boolean = false)
+data class ShoppingItem(
+    val id: Int,
+    var name: String,
+    var quantity: Int,
+    var isEditing: Boolean = false
+)
 
 // Composable function to edit a shopping item
 @Composable
@@ -50,7 +58,9 @@ fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Row(
-            modifier = Modifier.padding(8.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -60,7 +70,10 @@ fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit
                     value = editedName,
                     onValueChange = { editedName = it },
                     singleLine = true,
-                    modifier = Modifier.padding(7.dp).wrapContentWidth().padding(start = 20.dp),
+                    modifier = Modifier
+                        .padding(7.dp)
+                        .wrapContentWidth()
+                        .padding(start = 20.dp),
                     textStyle = TextStyle(color = Color.White)
                 )
                 // Text field to edit item quantity
@@ -68,7 +81,10 @@ fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit
                     value = editedQuantity,
                     onValueChange = { editedQuantity = it },
                     singleLine = true,
-                    modifier = Modifier.padding(7.dp).wrapContentWidth().padding(start = 20.dp),
+                    modifier = Modifier
+                        .padding(7.dp)
+                        .wrapContentWidth()
+                        .padding(start = 20.dp),
                     textStyle = TextStyle(color = Color.White)
                 )
             }
@@ -87,7 +103,13 @@ fun ShoppingItemEditor(item: ShoppingItem, onEditComplete: (String, Int) -> Unit
 
 // Main composable function for the shopping list app
 @Composable
-fun ShoppingListApp() {
+fun ShoppingListApp(
+    locationUtils: LocationUtils,
+    viewModel: LocationViewModel,
+    navController: NavController,
+    context: CompositionContext,
+    address: String
+) {
     var sItems by remember { mutableStateOf(listOf<ShoppingItem>()) }
     var showDialog by remember { mutableStateOf(false) }
     var itemName by remember { mutableStateOf("") }
@@ -98,12 +120,17 @@ fun ShoppingListApp() {
         verticalArrangement = Arrangement.Center
     ) {
         // Button to show the dialog for adding a new item
-        Button(onClick = { showDialog = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+        Button(
+            onClick = { showDialog = true },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
             Text(text = "Add Item")
         }
         // LazyColumn to display the list of shopping items
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(16.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
             items(sItems) { item ->
                 if (item.isEditing) {
@@ -142,7 +169,9 @@ fun ShoppingListApp() {
             onDismissRequest = { showDialog = false },
             confirmButton = {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(7.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(7.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Cancel button
@@ -176,7 +205,9 @@ fun ShoppingListApp() {
                         value = itemName,
                         onValueChange = { itemName = it },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(7.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(7.dp)
                     )
                     Spacer(modifier = Modifier.padding(16.dp))
                     // Input field for item quantity
@@ -184,7 +215,9 @@ fun ShoppingListApp() {
                         value = itemQuantity,
                         onValueChange = { itemQuantity = it },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(7.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(7.dp)
                     )
                 }
             }
@@ -201,11 +234,17 @@ fun ShoppingListItem(item: ShoppingItem, onEditClick: () -> Unit, onDeleteClick:
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Row(
-            modifier = Modifier.padding(8.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .weight(1f)
+            ) {
                 // Display item name
                 Text(text = item.name, modifier = Modifier.padding(10.dp), color = Color.White)
                 // Display item quantity
@@ -218,12 +257,22 @@ fun ShoppingListItem(item: ShoppingItem, onEditClick: () -> Unit, onDeleteClick:
             Row {
                 // Button to edit the item
                 IconButton(onClick = onEditClick) {
-                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit item ${item.name}")
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit item ${item.name}"
+                    )
                 }
                 // Button to delete the item
                 IconButton(onClick = onDeleteClick) {
-                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete item ${item.name}")
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete item ${item.name}"
+                    )
                 }
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = "Add item Location"
+                )
             }
         }
     }
