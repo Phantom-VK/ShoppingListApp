@@ -49,7 +49,7 @@ data class ShoppingItem(
     val id: Int,
     var name: String,
     var quantity: Int,
-    var address: String,
+    var address: String = "",
     var isEditing: Boolean = false
 )
 
@@ -146,17 +146,11 @@ fun ShoppingListApp(
                     ShoppingItemEditor(item = item, onEditComplete = { editedName, editedQuantity ->
                         // Update the list with edited item and close editor
                         sItems = sItems.map { it.copy(isEditing = false) }
-                        val editedItemIndex = sItems.indexOfFirst { it.id == item.id }
-                        if (editedItemIndex != -1) {
-                            sItems = sItems.toMutableList().apply {
-                                this[editedItemIndex] = this[editedItemIndex].copy(
-                                    name = editedName,
-                                    quantity = editedQuantity,
-                                    isEditing = false,
-                                    address = address
-
-                                )
-                            }
+                        val editedItem = sItems.find { it.id == item.id }
+                        editedItem?.let {
+                            it.name = editedName
+                            it.quantity = editedQuantity
+                            it.address = address
                         }
                     })
                 } else {
@@ -243,16 +237,18 @@ fun ShoppingListApp(
                     }
 
                     Button(onClick = {
-                        if(locationUtils.hasLocationPermission(context)){
+                        if (locationUtils.hasLocationPermission(context)) {
                             locationUtils.requestLocationUpdates(viewModel)
-                            navController.navigate("locationscreen"){
+                            navController.navigate("locationscreen") {
                                 this.launchSingleTop
                             }
-                        }else{
-                                requestPermissionLauncher.launch(arrayOf(
+                        } else {
+                            requestPermissionLauncher.launch(
+                                arrayOf(
                                     Manifest.permission.ACCESS_FINE_LOCATION,
                                     Manifest.permission.ACCESS_COARSE_LOCATION
-                                ))
+                                )
+                            )
                         }
                     }) {
                         Text(text = "Address")
@@ -318,9 +314,9 @@ fun ShoppingListItem(item: ShoppingItem, onEditClick: () -> Unit, onDeleteClick:
                     color = Color.White
                 )
 
-                Text(text = "Address: ${item.address}" )
+                Text(text = "Address: ${item.address}")
             }
-            Row (horizontalArrangement = Arrangement.SpaceEvenly){
+            Row(horizontalArrangement = Arrangement.SpaceEvenly) {
                 // Button to edit the item
                 IconButton(onClick = onEditClick) {
                     Icon(
